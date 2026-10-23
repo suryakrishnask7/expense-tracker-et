@@ -1,0 +1,20 @@
+services:
+  expense-tracker-et:
+    build: .
+    container_name: expense-tracker-et
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=prod-docker-expense-tracker-et-secret-key-32bytes
+      - DATABASE_PATH=/app/data/expense_tracker.db
+      - DEFAULT_CURRENCY_SYMBOL=₹
+      - DEFAULT_CURRENCY_CODE=INR
+      - DEFAULT_MONTHLY_BUDGET=50000.00
+    volumes:
+      - expense_data:/app/data
+
+volumes:
+  expense_data:
+    name: expense_tracker_data

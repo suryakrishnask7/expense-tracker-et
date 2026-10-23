@@ -1,0 +1,43 @@
+# Woodpecker CI Pipeline Configuration for Expense Tracker ET
+# Academic Project: "Design and Implementation of a CI/CD Pipeline Using Woodpecker CI"
+
+when:
+  - event: [push, pull_request]
+    branch: [main]
+
+steps:
+  # Stage 1: Automated Testing & Validation
+  - name: test
+    image: python:3.12-slim
+    environment:
+      - FLASK_ENV=testing
+      - TESTING=true
+    commands:
+      - python -V
+      - pip install --no-cache-dir --upgrade pip
+      - pip install --no-cache-dir -r requirements.txt
+      - pip install --no-cache-dir -r requirements-dev.txt
+      - pytest -v --cov=app
+
+  # Stage 2: Automated Deployment to Linux Virtual Machine / Server
+  # Only executes when all tests succeed AND the event is a push to the main branch
+  - name: deploy
+    image: alpine:3.19
+    depends_on:
+      - test
+    when:
+      - event: push
+        branch: main
+        status: success
+    secrets: [deploy_ssh_key, deploy_host, deploy_user, deploy_path]
+    commands:
+      # Install SSH client and rsync
+      - apk add --no-cache openssh-client rsync bash
+      # Prepare SSH private key securely
+      - mkdir -p ~/.ssh
+      - echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
+      - chmod 600 ~/.ssh/id_rsa
+      - ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+      # Execute remote deployment script via SSH
+      - echo "Initiating deployment to $DEPLOY_HOST..."
+      - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" "bash -s" < deploy/deploy.sh

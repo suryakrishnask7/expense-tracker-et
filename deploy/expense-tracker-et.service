@@ -1,0 +1,25 @@
+[Unit]
+Description=Expense Tracker ET - Gunicorn Application Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/expense-tracker-et/current
+EnvironmentFile=/opt/expense-tracker-et/shared/.env
+ExecStart=/opt/expense-tracker-et/venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:5000 \
+    --access-logfile /var/log/expense-tracker-et/access.log \
+    --error-logfile /var/log/expense-tracker-et/error.log \
+    --capture-output \
+    wsgi:application
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

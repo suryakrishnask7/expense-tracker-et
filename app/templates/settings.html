@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ app_name }}{% endblock %}
+{% block page_title %}Settings & Preferences{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+      <!-- Preferences Form Card -->
+      <div class="et-card mb-4">
+        <div class="d-flex align-items-center gap-3 pb-3 mb-4 border-bottom">
+          <div class="brand-icon" style="width: 40px; height: 40px; font-size: 18px;">
+            <i class="bi bi-sliders"></i>
+          </div>
+          <div>
+            <h2 class="h6 mb-0 fw-bold">General Preferences</h2>
+            <span class="text-muted small">Customize currency symbols, date styles, and monthly financial limits</span>
+          </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings.index') }}" novalidate id="settingsForm">
+          {{ form.hidden_tag() }}
+
+          <div class="row g-3 mb-3">
+            <!-- Currency Symbol -->
+            <div class="col-12 col-sm-6">
+              <label for="currency_symbol" class="form-label">{{ form.currency_symbol.label.text }} <span class="text-danger">*</span></label>
+              {{ form.currency_symbol(class="form-control " + ("is-invalid" if form.currency_symbol.errors else ""), id="currency_symbol") }}
+              {% for error in form.currency_symbol.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+              <div class="form-text small">Default: ₹ (Indian Rupee)</div>
+            </div>
+
+            <!-- Currency Code -->
+            <div class="col-12 col-sm-6">
+              <label for="currency_code" class="form-label">{{ form.currency_code.label.text }} <span class="text-danger">*</span></label>
+              {{ form.currency_code(class="form-control " + ("is-invalid" if form.currency_code.errors else ""), id="currency_code") }}
+              {% for error in form.currency_code.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+              <div class="form-text small">ISO 4217 code (e.g. INR)</div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <!-- Preferred Date Format -->
+            <div class="col-12 col-sm-6">
+              <label for="date_format" class="form-label">{{ form.date_format.label.text }} <span class="text-danger">*</span></label>
+              {{ form.date_format(class="form-select " + ("is-invalid" if form.date_format.errors else ""), id="date_format") }}
+              {% for error in form.date_format.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+              <div class="form-text small">Formats transaction timestamps across the app.</div>
+            </div>
+
+            <!-- Monthly Spending Budget -->
+            <div class="col-12 col-sm-6">
+              <label for="monthly_budget" class="form-label">{{ form.monthly_budget.label.text }} <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light text-teal fw-bold">₹</span>
+                {{ form.monthly_budget(class="form-control " + ("is-invalid" if form.monthly_budget.errors else ""), id="monthly_budget") }}
+                {% for error in form.monthly_budget.errors %}
+                  <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+              </div>
+              <div class="form-text small">Threshold for monthly spending warnings. Enter 0 to disable.</div>
+            </div>
+          </div>
+
+          <!-- Save Button -->
+          <button type="submit" class="btn btn-teal px-4" id="savePreferencesBtn">
+            <i class="bi bi-check-lg me-1"></i> Save Preferences
+          </button>
+        </form>
+      </div>
+
+      <!-- Factory Reset Card -->
+      <div class="et-card mb-4 border-warning">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+          <div>
+            <h3 class="h6 mb-1 fw-bold text-dark">
+              <i class="bi bi-arrow-counterclockwise text-warning me-2"></i>Reset to Factory Defaults
+            </h3>
+            <p class="text-muted small mb-0">Reverts all display preferences and monthly budget back to original setup.</p>
+          </div>
+          <form method="POST" action="{{ url_for('settings.reset') }}" onsubmit="return confirm('Are you sure you want to reset all preferences to default values? Existing transactions and categories will not be deleted.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-warning text-dark text-nowrap" id="resetDefaultsBtn">
+              Reset Preferences
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Academic & Architecture Notice Card -->
+      <div class="et-card bg-light">
+        <h3 class="h6 fw-bold text-dark mb-2">
+          <i class="bi bi-info-circle-fill text-teal me-2"></i>Academic Architecture & Deployment Notice
+        </h3>
+        <p class="text-muted small mb-2">
+          This application is designed as the core artifact for the academic project: <strong>“Design and Implementation of a CI/CD Pipeline Using Woodpecker CI.”</strong>
+        </p>
+        <ul class="text-muted small mb-0 ps-3">
+          <li><strong>Single-User Architecture:</strong> Intended for trusted local use or single-operator virtual machines. No open public user registration.</li>
+          <li><strong>Data Persistence:</strong> SQLite database path is configurable via <code>DATABASE_PATH</code> and preserved across CI/CD deployment releases.</li>
+          <li><strong>Automated Health Monitoring:</strong> Accessible at <a href="{{ url_for('health_check') }}" target="_blank" class="text-teal"><code>/health</code></a>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

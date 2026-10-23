@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Add Transaction - {{ app_name }}{% endblock %}
+{% block page_title %}Add Transaction{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+      <div class="et-card">
+        <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="brand-icon" style="width: 36px; height: 36px; font-size: 16px;">
+              <i class="bi bi-plus-lg"></i>
+            </div>
+            <div>
+              <h2 class="h6 mb-0 fw-bold">Record Transaction</h2>
+              <span class="text-muted small">Enter financial details below</span>
+            </div>
+          </div>
+          <a href="{{ url_for('transactions.index') }}" class="btn btn-sm btn-light border text-muted">
+            <i class="bi bi-x-lg"></i>
+          </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('transactions.create') }}" novalidate id="transactionCreateForm">
+          {{ form.hidden_tag() }}
+
+          <!-- Transaction Type -->
+          <div class="mb-3">
+            <label for="type" class="form-label">{{ form.type.label.text }} <span class="text-danger">*</span></label>
+            {{ form.type(class="form-select " + ("is-invalid" if form.type.errors else ""), id="type") }}
+            {% for error in form.type.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Amount -->
+          <div class="mb-3">
+            <label for="amount" class="form-label">{{ form.amount.label.text }} <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-light fw-bold text-teal">₹</span>
+              {{ form.amount(class="form-control " + ("is-invalid" if form.amount.errors else ""), id="amount", autofocus=True) }}
+              {% for error in form.amount.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+            </div>
+            <div class="form-text small">Enter amount in Indian Rupees (e.g. 250.00). Stored precisely in paise.</div>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-3">
+            <label for="description" class="form-label">{{ form.description.label.text }} <span class="text-danger">*</span></label>
+            {{ form.description(class="form-control " + ("is-invalid" if form.description.errors else ""), id="description") }}
+            {% for error in form.description.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Category -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label for="category_id" class="form-label mb-0">{{ form.category_id.label.text }} <span class="text-danger">*</span></label>
+              <a href="{{ url_for('categories.create') }}" class="small text-teal text-decoration-none" target="_blank">
+                <i class="bi bi-plus-circle me-1"></i>New Category
+              </a>
+            </div>
+            {{ form.category_id(class="form-select " + ("is-invalid" if form.category_id.errors else ""), id="category_id") }}
+            {% for error in form.category_id.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Date & Payment Method Row -->
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label for="transaction_date" class="form-label">{{ form.transaction_date.label.text }} <span class="text-danger">*</span></label>
+              {{ form.transaction_date(class="form-control " + ("is-invalid" if form.transaction_date.errors else ""), id="transaction_date") }}
+              {% for error in form.transaction_date.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label for="payment_method" class="form-label">{{ form.payment_method.label.text }} <span class="text-danger">*</span></label>
+              {{ form.payment_method(class="form-select " + ("is-invalid" if form.payment_method.errors else ""), id="payment_method") }}
+              {% for error in form.payment_method.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="mb-4">
+            <label for="notes" class="form-label">{{ form.notes.label.text }}</label>
+            {{ form.notes(class="form-control " + ("is-invalid" if form.notes.errors else ""), id="notes") }}
+            {% for error in form.notes.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Submit & Cancel -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-teal px-4" id="saveTransactionBtn">
+              <i class="bi bi-check-lg me-1"></i> Save Transaction
+            </button>
+            <a href="{{ url_for('transactions.index') }}" class="btn btn-outline-secondary px-3" id="cancelTransactionBtn">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

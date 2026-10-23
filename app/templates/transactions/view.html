@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction #{{ transaction.id }} - {{ app_name }}{% endblock %}
+{% block page_title %}Transaction Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+      <div class="et-card">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start pb-3 mb-4 border-bottom">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              {% if transaction.type == 'income' %}
+                <span class="badge badge-income"><i class="bi bi-arrow-down-left me-1"></i>Income</span>
+              {% else %}
+                <span class="badge badge-expense"><i class="bi bi-arrow-up-right me-1"></i>Expense</span>
+              {% endif %}
+              <span class="text-muted small">ID: #{{ transaction.id }}</span>
+            </div>
+            <h2 class="h4 mb-0 fw-bold text-dark">{{ transaction.description }}</h2>
+          </div>
+          <div class="text-end">
+            <div class="fs-3 fw-bold {% if transaction.type == 'income' %}text-success{% else %}text-danger{% endif %}" id="viewTxnAmount">
+              {% if transaction.type == 'income' %}+{% else %}-{% endif %} {{ transaction.formatted_amount }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="row g-3 mb-4">
+          <div class="col-6">
+            <div class="text-muted small">Category</div>
+            <div class="mt-1">
+              <span class="badge-category">
+                <i class="bi {{ transaction.category.icon }}" style="color: {{ transaction.category.color }};"></i>
+                {{ transaction.category.name }}
+              </span>
+            </div>
+          </div>
+
+          <div class="col-6">
+            <div class="text-muted small">Transaction Date</div>
+            <div class="fw-semibold mt-1">
+              <i class="bi bi-calendar-event text-teal me-1"></i>
+              {{ transaction.transaction_date | format_date }}
+            </div>
+          </div>
+
+          <div class="col-6">
+            <div class="text-muted small">Payment Method</div>
+            <div class="fw-semibold mt-1">
+              <span class="badge bg-light text-secondary border">{{ transaction.payment_method }}</span>
+            </div>
+          </div>
+
+          <div class="col-6">
+            <div class="text-muted small">Recorded On</div>
+            <div class="text-muted small mt-1">
+              {{ transaction.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+            </div>
+          </div>
+
+          {% if transaction.notes %}
+            <div class="col-12">
+              <div class="text-muted small">Notes / Remarks</div>
+              <div class="p-3 bg-light rounded mt-1 text-secondary" style="white-space: pre-wrap;">{{ transaction.notes }}</div>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+          <a href="{{ url_for('transactions.index') }}" class="btn btn-outline-secondary" id="backToTxnListBtn">
+            <i class="bi bi-arrow-left me-1"></i> Back to Transactions
+          </a>
+
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('transactions.edit', id=transaction.id) }}" class="btn btn-outline-teal" id="viewEditTxnBtn">
+              <i class="bi bi-pencil me-1"></i> Edit
+            </a>
+
+            <form method="POST" action="{{ url_for('transactions.delete', id=transaction.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete transaction #{{ transaction.id }}?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-outline-danger" id="viewDeleteTxnBtn">
+                <i class="bi bi-trash me-1"></i> Delete
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

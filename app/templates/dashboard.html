@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ app_name }}{% endblock %}
+{% block page_title %}Dashboard &bull; {{ month_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Top Metric Cards Row -->
+  <div class="row g-3 mb-4">
+    <!-- Total Expenses Card -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="et-card stat-card" id="cardMonthlyExpense">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-label">Month Expenses</div>
+            <div class="stat-value text-danger" id="valMonthlyExpense">{{ month_expense_paise | currency }}</div>
+          </div>
+          <div class="stat-icon stat-icon-expense">
+            <i class="bi bi-arrow-up-right"></i>
+          </div>
+        </div>
+        <div class="mt-2 text-muted small">
+          <i class="bi bi-clock-history me-1"></i> Current billing cycle
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Income Card -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="et-card stat-card" id="cardMonthlyIncome">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-label">Month Income</div>
+            <div class="stat-value text-success" id="valMonthlyIncome">{{ month_income_paise | currency }}</div>
+          </div>
+          <div class="stat-icon stat-icon-income">
+            <i class="bi bi-arrow-down-left"></i>
+          </div>
+        </div>
+        <div class="mt-2 text-muted small">
+          <i class="bi bi-cash me-1"></i> Recorded earnings
+        </div>
+      </div>
+    </div>
+
+    <!-- Net Balance Card -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="et-card stat-card" id="cardNetBalance">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-label">Net Balance</div>
+            <div class="stat-value {% if net_balance_paise >= 0 %}text-teal{% else %}text-danger{% endif %}" id="valNetBalance">
+              {{ net_balance_paise | currency }}
+            </div>
+          </div>
+          <div class="stat-icon stat-icon-balance">
+            <i class="bi bi-wallet2"></i>
+          </div>
+        </div>
+        <div class="mt-2 text-muted small">
+          {% if net_balance_paise >= 0 %}
+            <span class="text-success fw-medium"><i class="bi bi-check-circle me-1"></i>Net Surplus</span>
+          {% else %}
+            <span class="text-danger fw-medium"><i class="bi bi-exclamation-circle me-1"></i>Net Deficit</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction Count & Budget Card -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="et-card stat-card" id="cardTransactionCount">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-label">Month Activity</div>
+            <div class="stat-value text-primary" id="valTransactionCount">{{ month_transaction_count }}</div>
+          </div>
+          <div class="stat-icon stat-icon-count">
+            <i class="bi bi-activity"></i>
+          </div>
+        </div>
+        <div class="mt-2 text-muted small">
+          <span>Transactions recorded</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget Utilization Alert/Status (if budget set) -->
+  {% if budget_paise > 0 %}
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="et-card p-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 border-{% if budget_status == 'exceeded' %}danger{% elif budget_status == 'warning' %}warning{% else %}teal{% endif %}" id="budgetNoticeBanner">
+          <div class="d-flex align-items-center gap-3">
+            <div class="fs-3 {% if budget_status == 'exceeded' %}text-danger{% elif budget_status == 'warning' %}text-warning{% else %}text-teal{% endif %}">
+              {% if budget_status == 'exceeded' %}
+                <i class="bi bi-exclamation-octagon-fill"></i>
+              {% elif budget_status == 'warning' %}
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              {% else %}
+                <i class="bi bi-shield-check"></i>
+              {% endif %}
+            </div>
+            <div>
+              <div class="fw-bold">
+                Monthly Spending Budget: {{ budget_paise | currency }} 
+                <span class="badge {% if budget_status == 'exceeded' %}bg-danger{% elif budget_status == 'warning' %}bg-warning text-dark{% else %}bg-teal text-white{% endif %} ms-2">
+                  {{ budget_utilization }}% Used
+                </span>
+              </div>
+              <div class="text-muted small">
+                Spent {{ month_expense_paise | currency }} of {{ budget_paise | currency }}
+                {% if budget_status == 'exceeded' %}
+                  &bull; <strong class="text-danger">Budget exceeded by {{ (month_expense_paise - budget_paise) | currency }}!</strong>
+                {% elif budget_status == 'warning' %}
+                  &bull; <span class="text-warning fw-medium">Approaching budget limit (over 80%).</span>
+                {% else %}
+                  &bull; <span class="text-success fw-medium">{{ (budget_paise - month_expense_paise) | currency }} remaining.</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="w-100 w-md-25">
+            <div class="progress" style="height: 10px;">
+              <div class="progress-bar {% if budget_status == 'exceeded' %}bg-danger{% elif budget_status == 'warning' %}bg-warning{% else %}bg-teal{% endif %}" 
+                   role="progressbar" 
+                   style="width: {{ [budget_utilization, 100] | min }}%;" 
+                   aria-valuenow="{{ budget_utilization }}" 
+                   aria-valuemin="0" 
+                   aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Charts Row -->
+  <div class="row g-3 mb-4">
+    <!-- Income vs Expense Bar Chart -->
+    <div class="col-12 col-lg-8">
+      <div class="et-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h6 mb-0 fw-bold text-dark">
+            <i class="bi bi-bar-chart-fill text-teal me-2"></i>6-Month Income vs Expenses
+          </h2>
+          <span class="badge bg-light text-muted border">Overview</span>
+        </div>
+        <div class="chart-container" style="min-height: 280px;">
+          <canvas id="trendChart"></canvas>
+          <div id="trendChartFallback" class="text-center py-5 text-muted" style="display: none;">
+            <i class="bi bi-bar-chart fs-1 mb-2 d-block"></i>
+            <p>Chart preview unavailable offline. Historical data is logged in Reports.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Expense Breakdown Donut Chart -->
+    <div class="col-12 col-lg-4">
+      <div class="et-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h6 mb-0 fw-bold text-dark">
+            <i class="bi bi-pie-chart-fill text-teal me-2"></i>Expense by Category
+          </h2>
+          <span class="badge bg-light text-muted border">Breakdown</span>
+        </div>
+        <div class="chart-container" style="min-height: 280px;">
+          <canvas id="categoryChart"></canvas>
+          <div id="categoryChartFallback" class="text-center py-5 text-muted" style="display: none;">
+            <i class="bi bi-pie-chart fs-1 mb-2 d-block"></i>
+            <p>Category distribution requires recorded expenses.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions Table Card -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="et-card et-table-card">
+        <div class="p-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-teal fs-5"></i>
+            <h2 class="h6 mb-0 fw-bold">Recent Transactions</h2>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('transactions.create') }}" class="btn btn-sm btn-teal" id="dashboardAddTxnBtn">
+              <i class="bi bi-plus-lg me-1"></i> Add Transaction
+            </a>
+            <a href="{{ url_for('transactions.index') }}" class="btn btn-sm btn-outline-secondary" id="dashboardViewAllBtn">
+              View All <i class="bi bi-chevron-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+
+        {% if recent_transactions %}
+          <div class="table-responsive">
+            <table class="table table-custom align-middle" id="recentTransactionsTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Method</th>
+                  <th class="text-end">Amount</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for txn in recent_transactions %}
+                  <tr>
+                    <td class="text-nowrap text-muted small">
+                      {{ txn.transaction_date | format_date }}
+                    </td>
+                    <td>
+                      <div class="fw-semibold text-dark">{{ txn.description }}</div>
+                      {% if txn.notes %}
+                        <div class="text-muted small text-truncate" style="max-width: 250px;">{{ txn.notes }}</div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge-category">
+                        <i class="bi {{ txn.category.icon }}" style="color: {{ txn.category.color }};"></i>
+                        {{ txn.category.name }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-secondary border">{{ txn.payment_method }}</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                      {% if txn.type == 'income' %}
+                        <span class="text-success fw-bold">+ {{ txn.formatted_amount }}</span>
+                      {% else %}
+                        <span class="text-danger fw-bold">- {{ txn.formatted_amount }}</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-center text-nowrap">
+                      <a href="{{ url_for('transactions.view', id=txn.id) }}" class="btn btn-sm btn-light border text-muted" title="View details">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                      <a href="{{ url_for('transactions.edit', id=txn.id) }}" class="btn btn-sm btn-light border text-muted" title="Edit transaction">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <!-- Empty State -->
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <i class="bi bi-inbox"></i>
+            </div>
+            <div class="empty-state-title">No transactions recorded yet</div>
+            <div class="empty-state-desc">
+              Start managing your expenses and income by adding your first transaction today.
+            </div>
+            <a href="{{ url_for('transactions.create') }}" class="btn btn-teal">
+              <i class="bi bi-plus-circle me-1"></i> Record First Transaction
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // 1. Render Income vs Expense Trend Bar Chart
+  const trendLabels = {{ chart_trend_labels | tojson }};
+  const trendIncome = {{ chart_trend_income | tojson }};
+  const trendExpense = {{ chart_trend_expense | tojson }};
+
+  initSafeChart("trendChart", "trendChartFallback", function () {
+    return {
+      type: "bar",
+      data: {
+        labels: trendLabels,
+        datasets: [
+          {
+            label: "Income (₹)",
+            data: trendIncome,
+            backgroundColor: "#10b981",
+            borderRadius: 6,
+            maxBarThickness: 32,
+          },
+          {
+            label: "Expense (₹)",
+            data: trendExpense,
+            backgroundColor: "#ef4444",
+            borderRadius: 6,
+            maxBarThickness: 32,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "top",
+            labels: { font: { family: "inherit", size: 12 }, usePointStyle: true },
+          },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                return ctx.dataset.label + ": ₹" + Number(ctx.parsed.y).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+              },
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function (val) {
+                return "₹" + val.toLocaleString("en-IN");
+              },
+            },
+            grid: { color: "#f1f5f9" },
+          },
+        },
+      },
+    };
+  });
+
+  // 2. Render Expense Breakdown Donut Chart
+  const catLabels = {{ chart_cat_labels | tojson }};
+  const catValues = {{ chart_cat_values | tojson }};
+  const catColors = {{ chart_cat_colors | tojson }};
+
+  if (catValues.length === 0 || catValues.every(v => v === 0)) {
+    const fallback = document.getElementById("categoryChartFallback");
+    const canvas = document.getElementById("categoryChart");
+    if (fallback) fallback.style.display = "block";
+    if (canvas) canvas.style.display = "none";
+  } else {
+    initSafeChart("categoryChart", "categoryChartFallback", function () {
+      return {
+        type: "doughnut",
+        data: {
+          labels: catLabels,
+          datasets: [
+            {
+              data: catValues,
+              backgroundColor: catColors.length ? catColors : ["#0d9488", "#f97316", "#0284c7", "#ec4899", "#eab308"],
+              borderWidth: 2,
+              borderColor: "#ffffff",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { font: { family: "inherit", size: 11 }, boxWidth: 12 },
+            },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  return ctx.label + ": ₹" + Number(ctx.parsed).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+                },
+              },
+            },
+          },
+          cutout: "68%",
+        },
+      };
+    });
+  }
+});
+</script>
+{% endblock %}

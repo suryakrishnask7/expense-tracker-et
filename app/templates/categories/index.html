@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Categories - {{ app_name }}{% endblock %}
+{% block page_title %}Categories Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h2 class="h5 mb-1 fw-bold text-dark">Transaction Categories</h2>
+      <p class="text-muted small mb-0">Organize and classify income and expense streams</p>
+    </div>
+    <a href="{{ url_for('categories.create') }}" class="btn btn-teal d-inline-flex align-items-center gap-1" id="newCategoryBtn">
+      <i class="bi bi-plus-lg"></i> Add Category
+    </a>
+  </div>
+
+  <div class="row g-3">
+    {% for cat in categories %}
+      <div class="col-12 col-md-6 col-lg-4" id="category-card-{{ cat.id }}">
+        <div class="et-card d-flex flex-column justify-content-between p-3">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon" style="background-color: {{ cat.color }}18; color: {{ cat.color }}; width: 44px; height: 44px; font-size: 20px;">
+                <i class="bi {{ cat.icon }}"></i>
+              </div>
+              <div>
+                <h3 class="h6 mb-0 fw-bold text-dark">{{ cat.name }}</h3>
+                <span class="badge {% if cat.type == 'income' %}badge-income{% elif cat.type == 'expense' %}badge-expense{% else %}bg-secondary text-white{% endif %} mt-1">
+                  {{ cat.type | capitalize }}
+                </span>
+              </div>
+            </div>
+
+            {% if cat.is_default %}
+              <span class="badge bg-light text-muted border small">Default</span>
+            {% endif %}
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+            <span class="text-muted small">
+              <i class="bi bi-receipt me-1"></i>
+              <strong>{{ cat.transaction_count }}</strong> transaction{{ 's' if cat.transaction_count != 1 else '' }}
+            </span>
+
+            <div class="btn-group btn-group-sm">
+              <a href="{{ url_for('categories.edit', id=cat.id) }}" class="btn btn-light border text-muted" title="Edit Category" id="editCatBtn-{{ cat.id }}">
+                <i class="bi bi-pencil"></i>
+              </a>
+
+              {% if cat.transaction_count == 0 %}
+                <form method="POST" action="{{ url_for('categories.delete', id=cat.id) }}" class="d-inline" onsubmit="return confirm('Delete category \'{{ cat.name }}\'?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-light border text-danger" title="Delete Category" id="deleteCatBtn-{{ cat.id }}">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              {% else %}
+                <button type="button" class="btn btn-light border text-muted disabled" title="Cannot delete: in use by {{ cat.transaction_count }} transactions">
+                  <i class="bi bi-trash text-muted"></i>
+                </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
