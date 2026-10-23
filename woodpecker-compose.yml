@@ -1,0 +1,32 @@
+services:
+  woodpecker-server:
+    image: woodpeckerci/woodpecker-server:v3
+    container_name: woodpecker-server
+    restart: always
+    ports:
+      - "8000:8000"
+      - "9000:9000"
+    volumes:
+      - woodpecker_server_data:/var/lib/woodpecker
+    environment:
+      - WOODPECKER_OPEN=true
+      - WOODPECKER_HOST=http://localhost:8000
+      - WOODPECKER_AGENT_SECRET=expense-tracker-et-woodpecker-secret-key-12345
+      - WOODPECKER_DEV_ALWAYS_AUTHENTICATE=true
+
+  woodpecker-agent:
+    image: woodpeckerci/woodpecker-agent:v3
+    container_name: woodpecker-agent
+    restart: always
+    depends_on:
+      - woodpecker-server
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WOODPECKER_SERVER=woodpecker-server:9000
+      - WOODPECKER_AGENT_SECRET=expense-tracker-et-woodpecker-secret-key-12345
+      - WOODPECKER_MAX_WORKFLOWS=2
+
+volumes:
+  woodpecker_server_data:
+    name: woodpecker_server_data

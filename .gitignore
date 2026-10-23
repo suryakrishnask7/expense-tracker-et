@@ -55,3 +55,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Woodpecker CLI binary
+woodpecker-cli.exe
