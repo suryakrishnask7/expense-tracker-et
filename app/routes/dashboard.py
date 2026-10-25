@@ -47,7 +47,7 @@ def index():
         ).count()
     )
 
-    net_balance_paise = month_income_paise - month_expense_paise
+    net_balance_paise = month_income_paise + month_expense_paise
 
     # Budget calculation
     budget_paise = AppSetting.get_int("monthly_budget_paise", 5000000)
