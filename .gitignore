@@ -58,3 +58,10 @@ Thumbs.db
 
 # Woodpecker CLI binary
 woodpecker-cli.exe
+
+# Local deployment SSH keys & secrets
+deploy_key
+deploy_key.pub
+secrets.yml
+run-pipeline.bat
+

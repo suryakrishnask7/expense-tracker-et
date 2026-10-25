@@ -32,9 +32,10 @@ echo "=========================================================="
 # 2. Directory Structure & Permissions Setup
 # ------------------------------------------------------------------------------
 echo "--> Creating required directories..."
+sudo mkdir -p "${BASE_DIR}" "${LOG_DIR}"
+sudo chown -R "$(id -un):$(id -gn)" "${BASE_DIR}" "${LOG_DIR}"
 mkdir -p "${RELEASES_DIR}"
 mkdir -p "${SHARED_DIR}"
-mkdir -p "${LOG_DIR}"
 
 # ------------------------------------------------------------------------------
 # 3. Persistent SQLite Database Preservation
@@ -64,17 +65,18 @@ fi
 echo "--> Preparing release directory: ${NEW_RELEASE_DIR}"
 mkdir -p "${NEW_RELEASE_DIR}"
 
-# If deploying from local workspace or git repository
-if [ -d ".git" ] || [ -f "requirements.txt" ]; then
+# If deploying from local workspace or transferred source directory
+SOURCE_DIR="${DEPLOY_SOURCE_DIR:-.}"
+if [ -d "${SOURCE_DIR}/app" ] && [ -f "${SOURCE_DIR}/requirements.txt" ]; then
     rsync -av --exclude='.git' \
               --exclude='venv' \
               --exclude='instance/*.db' \
               --exclude='__pycache__' \
               --exclude='.pytest_cache' \
               --exclude='.coverage' \
-              ./ "${NEW_RELEASE_DIR}/"
+              "${SOURCE_DIR}/" "${NEW_RELEASE_DIR}/"
 else
-    echo "ERROR: No source files found to deploy!"
+    echo "ERROR: No source files found in ${SOURCE_DIR} to deploy!"
     exit 1
 fi
 
@@ -97,7 +99,8 @@ echo "--> Installing / upgrading dependencies..."
 # 6. Database Migrations / Schema Validation
 # ------------------------------------------------------------------------------
 echo "--> Initializing / validating database schema..."
-DATABASE_PATH="${SHARED_DB_FILE}" "${VENV_DIR}/bin/python" -c "from app import create_app, db; app = create_app('production');"
+PYTHONPATH="${NEW_RELEASE_DIR}" DATABASE_PATH="${SHARED_DB_FILE}" "${VENV_DIR}/bin/python" -c "from app import create_app, db; app = create_app('production');"
+
 
 # ------------------------------------------------------------------------------
 # 7. Atomic Release Switch via Symlink
@@ -113,15 +116,19 @@ ln -sfn "${NEW_RELEASE_DIR}" "${CURRENT_LINK}"
 # ------------------------------------------------------------------------------
 # 8. Service Installation & Restart
 # ------------------------------------------------------------------------------
-echo "--> Updating systemd service..."
-if [ -f "${CURRENT_LINK}/deploy/${SERVICE_NAME}" ]; then
+echo "--> Updating and restarting service..."
+if command -v systemctl >/dev/null 2>&1 && [ "$(systemctl is-system-running 2>/dev/null || true)" != "offline" ]; then
     sudo cp "${CURRENT_LINK}/deploy/${SERVICE_NAME}" "/etc/systemd/system/${SERVICE_NAME}"
     sudo systemctl daemon-reload
     sudo systemctl enable "${SERVICE_NAME}"
+    sudo systemctl restart "${SERVICE_NAME}"
+else
+    # Container / non-systemd fallback: start Gunicorn background daemon
+    pkill -f gunicorn 2>/dev/null || true
+    sleep 1
+    cd "${CURRENT_LINK}"
+    nohup "${VENV_DIR}/bin/gunicorn" --workers 2 --bind 0.0.0.0:5000 wsgi:application > "${LOG_DIR}/access.log" 2> "${LOG_DIR}/error.log" &
 fi
-
-echo "--> Restarting ${SERVICE_NAME}..."
-sudo systemctl restart "${SERVICE_NAME}"
 
 # ------------------------------------------------------------------------------
 # 9. Automated Post-Deployment Health Check
