@@ -20,8 +20,6 @@ steps:
       - pip install --no-cache-dir -r requirements-dev.txt
       - python -m pytest -v --cov=app
 
-  # Stage 2: Automated Deployment to Linux Virtual Machine / Server
-  # Only executes when all tests succeed AND the event is a push to the main branch
   - name: deploy
     image: alpine:3.19
     depends_on:
